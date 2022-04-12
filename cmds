@@ -1,0 +1,48 @@
+
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+bin/kafka-server-start.sh config/server.properties
+
+#
+./bin/kafka-topics.sh --create --topic store --bootstrap-server localhost:9092 
+
+./bin/kafka-topics.sh --create --topic release --bootstrap-server localhost:9092 
+
+#
+bin/kafka-topics.sh --describe --topic store --bootstrap-server localhost:9092
+
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic store --from-beginning
+
+~/projects/streams$ mkdir StreamHandler
+dhayanidhi@dhayanidhi:~/projects/streams$ cd StreamHandler/
+dhayanidhi@dhayanidhi:~/projects/streams/StreamHandler$ ls
+dhayanidhi@dhayanidhi:~/projects/streams/StreamHandler$ touch build.sbt
+dhayanidhi@dhayanidhi:~/projects/streams/StreamHandler$ mkdir -p src/main/scala
+dhayanidhi@dhayanidhi:~/projects/streams/StreamHandler$ touch src/main/scala/StreamHandler.scala
+dhayanidhi@dhayanidhi:~/projects/streams/StreamHandler$ cd ..
+dhayanidhi@dhayanidhi:~/projects/streams$ ^C
+
+
+bin/cassandra -f
+bin/nodetool status
+
+./bin/cqlsh
+cqlsh>create keyspace inventory with replication = {'class' : 'SimpleStrategy','replication_factor':1};
+cqlsh>
+
+cqlsh:storage> create table stocks ( uniqueid uuid primary key, types text, status text, cost int, number int );
+
+sbt package && spark-submit --class StreamHandler --master local[*] --packages "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2,com.datastax.spark:spark-cassandra-connector_2.12:3.1.0,com.datastax.cassandra:cassandra-driver-core:4.0.0" target/scala-2.12/stream-handler_2.12-1.0.jar 
+
+create table stockv (
+    uniqueid uuid,
+    types text,
+    status text,
+    cost int,
+    count int,
+    primary key(status,uniqueid)
+)
+with clustering order by(uniqueid ASC);
+
+ --replication-factor 3 --partitions 3 
